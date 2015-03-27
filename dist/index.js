@@ -5,18 +5,19 @@ var angularPoint;
     'use strict';
     /**
      * @ngdoc service
-     * @name lookupCacheService
+     * @name apLookupCacheService
      * @description
      */
     var apLookupCacheService = (function () {
         function apLookupCacheService(apIndexedCacheFactory) {
             this.apIndexedCacheFactory = apIndexedCacheFactory;
+            this.lookupCache = {};
         }
         apLookupCacheService.$inject = ['apIndexedCacheFactory'];
         /**
          * @ngdoc function
-         * @name RTM.lookupCacheService:cacheEntityByLookupId
-         * @methodOf RTM.lookupCacheService
+         * @name apLookupCacheService:cacheEntityByLookupId
+         * @methodOf apLookupCacheService
          * @param {ListItem} entity List item to index.
          * @param {string[]} propertyArray Array of the lookup properties to index by lookupId.
          */
@@ -43,8 +44,8 @@ var angularPoint;
         };
         /**
          * @ngdoc function
-         * @name RTM.lookupCacheService:retrieveLookupCacheById
-         * @methodOf RTM.lookupCacheService
+         * @name apLookupCacheService:retrieveLookupCacheById
+         * @methodOf apLookupCacheService
          * @param {string} propertyName Cache name - name of property on cached entity.
          * @param {number} cacheId ID of the cache.  The entity.property.lookupId.
          * @param {string} listId GUID of the list definition on the model.
@@ -94,5 +95,6 @@ var angularPoint;
         };
         return apLookupCacheService;
     })();
+    angularPoint.apLookupCacheService = apLookupCacheService;
     angular.module('angularPoint').service('apLookupCacheService', apLookupCacheService);
 })(angularPoint || (angularPoint = {}));
