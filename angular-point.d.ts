@@ -1,7 +1,7 @@
 /// <reference path=".tmp/typings/tsd.d.ts" />
 
 
-declare module angularPoint {
+declare module ap {
 
   interface IndexedCache{
     addEntity(entity:ListItem): void;

@@ -10,10 +10,10 @@ var ts = require('gulp-typescript');
 var ngAnnotate = require('gulp-ng-annotate');
 var tsdJson = 'tsd.json';
 var tsdApi = new tsd.getAPI(tsdJson);
-
+var sourcemaps = require('gulp-sourcemaps');
 
 var options = {
-    src: 'src',
+    src: 'ts',
     dist: 'dist',
     tmp: '.tmp',
     e2e: 'e2e',
@@ -77,10 +77,11 @@ gulp.task('tsd', ['tsd:install']);
 
 gulp.task('build', function() {
     return gulp.src(options.src + '/**/*.ts')
+        //.pipe(sourcemaps.init())
         .pipe(ts({
-            //declarationFiles: true
-            //noExternalResolve: true
+            declarationFiles: true
         }))
-        .pipe(ngAnnotate({add: true, single_quotes: true}))
+        //.pipe(sourcemaps.write())
+        //.pipe(ngAnnotate({add: true, single_quotes: true}))
         .pipe(gulp.dest(options.dist + '/'));
 });
