@@ -1,4 +1,6 @@
+//Remove Initial slash to get typings
 /// <reference path="../typings/tsd.d.ts" />
+/// <reference path="../angular-point.d.ts" />
 var ap;
 (function (ap) {
     var LookupCache;

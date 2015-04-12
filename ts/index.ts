@@ -1,4 +1,6 @@
-/// <reference path="../typings/tsd.d.ts" />
+//Remove Initial slash to get typings
+//// <reference path="../typings/tsd.d.ts" />
+//// <reference path="../angular-point.d.ts" />
 
 module ap.LookupCache {
     'use strict';

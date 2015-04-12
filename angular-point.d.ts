@@ -1,178 +1,170 @@
-/// <reference path=".tmp/typings/tsd.d.ts" />
-
 
 declare module ap {
 
-  interface IndexedCache{
-    addEntity(entity:ListItem): void;
+  interface IIndexedCache {
+    addEntity(entity:IListItem): void;
     clear(): void;
     count(): number;
-    first(): ListItem;
+    first(): IListItem;
     keys(): string[];
-    last(): ListItem;
-    nthEntity(index:number): ListItem;
-    removeEntity(entity:ListItem): void;
-    toArray(): ListItem[];
+    last(): IListItem;
+    nthEntity(index:number): IListItem;
+    removeEntity(entity:IListItem): void;
+    toArray(): IListItem[];
     //Object with keys equaling ID and values being the individual list item
-    [key: number]: ListItem;
+    [key: number]: IListItem;
   }
 
-  interface ListItemCrudOptions{
+  interface IListItemCrudOptions {
     //TODO Implement
   }
 
-  interface FieldDefinition {
-    staticName:string;
-    objectType:string;
+  interface IFieldDefinition {
+    choices?:string[];
+    Choices?:string[];
+    description?:string;
+    Description?:string;
+    displayName?:string;
+    DisplayName?:string;
+    getDefaultValueForType?():string;
+    getDefinition?():string;
+    getMockData?(options?:Object):any;
+    label:string;
     mappedName:string;
+    objectType:string;
     readOnly?:boolean;
     required?:boolean;
-    description?:string;
-    getDefinition?():string;
-    getDefaultValueForType?():string;
-    getMockData?(options?:Object):any;
+    Required?:boolean;
+    staticName:string;
+    List?
   }
 
-  interface ListItemVersion {
+  interface IListItemVersion {
     //TODO Implement
   }
 
-  interface WorkflowDefinition{
+  interface IWorkflowDefinition {
     name:string;
     instantiationUrl:string;
     templateId:string;
   }
 
-  interface StartWorkflowParams{
+  interface IStartWorkflowParams {
     templateId?:string;
     workflowName?:string;
+    fileRef?:string;
   }
 
-  interface Choice{
-    value:string;
-  }
-
-  interface MultiChoice{
-    value:string[];
-  }
-
-  interface Lookup{
+  interface ILookup {
     lookupValue:string;
     lookupId:number;
   }
 
-  interface User{
+  interface IUser {
     lookupValue:string;
     lookupId:number;
   }
 
-  interface UserMulti{
-    value:User[];
-  }
-
-  interface JSON{
-    value:Object;
-  }
-
-  interface Attachments{
-    value:string[];
-  }
-
-  interface ListItem{
+  interface IListItem {
     id?:number;
     created?:Date;
     modified?:Date;
-    author?:User;
-    editor?:User;
+    author?: IUser;
+    editor?: IUser;
     permMask?:string;
     uniqueId?:string;
-    fileRef?:Lookup;
+    fileRef?: ILookup;
 
-    deleteAttachment?(url:string): ng.IPromise<any>;
-    deleteItem?( options?:ListItemCrudOptions ): ng.IPromise<any>;
-    getAttachmentCollection?(): ng.IPromise<string[]>;
-    getAvailableWorkflows?(): ng.IPromise<WorkflowDefinition[]>;
-    getFieldChoices?( fieldName:string ): string[];
-    getFieldDefinition?( fieldName:string ): FieldDefinition;
-    getFieldDescription?( fieldName:string ): string;
-    getFieldLabel?( fieldName:string ): string;
-    getFieldVersionHistory?(fieldNames:string[]): ng.IPromise<ListItemVersion>;
-    getFormattedValue?( fieldName:string, options:Object ): string;
-    getLookupReference?( fieldName:string, lookupId:number ): ListItem;
-    resolvePermissions?(): UserPermissionsObject;
-    saveChanges?( options?:ListItemCrudOptions ): ng.IPromise<ListItem>;
-    saveFields?( fieldArray:string[], options?:ListItemCrudOptions ): ng.IPromise<ListItem>;
-    startWorkflow?(options:StartWorkflowParams): ng.IPromise<any>;
-    validateEntity?( options?:Object ): boolean;
+    deleteAttachment(url:string): ng.IPromise<any>;
+    deleteItem(options?:IListItemCrudOptions): ng.IPromise<any>;
+    getAttachmentCollection(): ng.IPromise<string[]>;
+    getAvailableWorkflows(): ng.IPromise<IWorkflowDefinition[]>;
+    getFieldChoices(fieldName:string): string[];
+    getFieldDefinition(fieldName:string): IFieldDefinition;
+    getFieldDescription(fieldName:string): string;
+    getFieldLabel(fieldName:string): string;
+    getFieldVersionHistory(fieldNames:string[]): ng.IPromise<IListItemVersion>;
+    getFormattedValue(fieldName:string, options:Object): string;
+    getLookupReference(fieldName:string, lookupId:number): IListItem;
+    resolvePermissions(): IUserPermissionsObject;
+    saveChanges(options?:IListItemCrudOptions): ng.IPromise<IListItem>;
+    saveFields(fieldArray:string[], options?:IListItemCrudOptions): ng.IPromise<IListItem>;
+    startWorkflow(options:IStartWorkflowParams): ng.IPromise<any>;
+    validateEntity(options?:Object): boolean;
 
     //Added by Model Instantiation
-    getModel?():Model;
-    getList?():List;
-    getListId?():string;
+    getModel(): IModel;
+    getListId():string;
+    getList?(): IList;
+
   }
 
-  interface List{
+  interface IList {
+    customFields:IFieldDefinition[];
+    effectivePermMask?:string;
+    fields:IFieldDefinition[];
+    getListId():string;
     guid:string;
+    identifyWebURL():string;
+    isReady:boolean;
     title:string;
-    customFields:FieldDefinition[];
-    getListId?():string;
-    identifyWebURL?():string;
-    //viewFields?:string;
-    //private fields?:FieldDefinition[];
-    //isReady?:boolean;
-    webURL?:string;
+    viewFields:string;
+    webURL:string;
   }
 
-  interface Model{
-    factory:Function;
-    list:List;
+  interface IModel {
+    factory(obj:Object): void;
+    list:IList;
 
-    addNewItem?( entity:ListItem, options?:Object ): ng.IPromise<ListItem>;
-    createEmptyItem?(overrides?:Object): ListItem;
-    executeQuery?(queryName?:string, options?:Object): ng.IPromise<IndexedCache>;
-    extendListMetadata?(options:Object): ng.IPromise<any>;
-    generateMockData?(options?:Object): ListItem[];
-    getAllListItems?(): ng.IPromise<IndexedCache>;
-    getCache?(queryName:string): Cache;
-    getCachedEntity?(entityId:number): ListItem;
-    getCachedEntities?(): IndexedCache;
-    getFieldDefinition?(fieldName:string): FieldDefinition;
-    getListItemById?(entityId:number, options?:Object): ng.IPromise<ListItem>;
-    getQuery?(queryName:string): Query;
-    isInitialised?(): boolean;
-    resolvePermissions?(): UserPermissionsObject;
-    registerQuery?(queryOptions:QueryOptions): void;
-    validateEntity?(entity:ListItem, options?:Object): boolean;
+    addNewItem(entity:IListItem, options?:Object): ng.IPromise<IListItem>;
+    createEmptyItem(overrides?:Object): IListItem;
+    executeQuery(queryName?:string, options?:Object): ng.IPromise<IIndexedCache>;
+    extendListMetadata(options:Object): ng.IPromise<any>;
+    generateMockData(options?:Object): IListItem[];
+    getAllListItems(): ng.IPromise<IIndexedCache>;
+    getCache(queryName:string): ICache;
+    getCachedEntities(): IIndexedCache;
+    getCachedEntity(entityId:number): IListItem;
+    getFieldDefinition(fieldName:string): IFieldDefinition;
+    getList():IList;
+    getListId():string;
+    getListItemById(entityId:number, options?:Object): ng.IPromise<IListItem>;
+    getModel():IModel;
+    getQuery(queryName:string): IQuery;
+    isInitialised(): boolean;
+    registerQuery(queryOptions: IQueryOptions): IQuery;
+    resolvePermissions(): IUserPermissionsObject;
+    validateEntity(entity:IListItem, options?:Object): boolean;
   }
 
-  interface DiscussionThread{
-    posts:DiscussionThreadPost[];
+  interface IDiscussionThread {
+    posts:IDiscussionThreadPost[];
     nextId:number;
     getNextId():number;
-    createPost(parentId:number,content:string):DiscussionThreadPost;
-    getListItem():ListItem;
+    createPost(parentId:number, content:string):IDiscussionThreadPost;
+    getListItem():IListItem;
     prune():void;
-    saveChanges():ng.IPromise<ListItem>;
+    saveChanges():ng.IPromise<IListItem>;
   }
 
-  interface DiscussionThreadPost{
+  interface IDiscussionThreadPost {
     content:string;
     id:number;
     parentId:number;
     created:Date;
-    user:User;
+    user:IUser;
     removePost():void;
-    deletePost():ng.IPromise<ListItem>;
-    savePost():ng.IPromise<ListItem>;
-    reply():ng.IPromise<ListItem>;
+    deletePost():ng.IPromise<IListItem>;
+    savePost():ng.IPromise<IListItem>;
+    reply():ng.IPromise<IListItem>;
   }
 
-  interface Cache{
+  interface ICache {
     //TODO Populate me!
   }
 
-  interface Query{
-    execute?(options?:Object):ng.IPromise<IndexedCache>;
+  interface IQuery {
+    execute?(options?:Object):ng.IPromise<IIndexedCache>;
     operation?:string;
     cacheXML?:boolean;
     offlineXML?:string;
@@ -180,12 +172,12 @@ declare module ap {
     queryOptions?:string;
   }
 
-  interface QueryOptions{
+  interface IQueryOptions {
     name?:string;
     operation?:string;
   }
 
-  interface UserPermissionsObject{
+  interface IUserPermissionsObject {
     ViewListItems:boolean;
     AddListItems:boolean;
     EditListItems:boolean;
