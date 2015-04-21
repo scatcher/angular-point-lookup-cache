@@ -1,20 +1,25 @@
 //Remove Initial slash to get typings
 //// <reference path="../typings/tsd.d.ts" />
-//// <reference path="../angular-point.d.ts" />
 
 module ap.LookupCache {
     'use strict';
 
+    interface ILookupCacheService{
+        retrieveLookupCacheById<T>(propertyName:string, listId:string, cacheId:number) : ap.IIndexedCache<T>;
+        retrieveLookupCacheById<T>(propertyName:string, listId:string, cacheId:number, asObject?:boolean) : T[];
+
+    }
 
     /**
      * @ngdoc service
      * @name apLookupCacheService
      * @description
      */
-    export class LookupCacheService {
+    export class LookupCacheService implements ILookupCacheService{
         lookupCache = {};
 
         constructor(private apIndexedCacheFactory) {
+
         }
 
         /**
@@ -24,19 +29,19 @@ module ap.LookupCache {
          * @param {ListItem} entity List item to index.
          * @param {string[]} propertyArray Array of the lookup properties to index by lookupId.
          */
-        cacheEntityByLookupId(entity:ap.IListItem, propertyArray:string[]) {
+        cacheEntityByLookupId(entity:ap.IListItem, propertyArray:string[]):void {
             var self = this;
             if (entity.id) {
                 /** GUID of the list definition on the model */
                 var listId = entity.getListId();
                 /** Only cache entities saved to server */
-                _.each(propertyArray, function (propertyName) {
+                _.each(propertyArray, (propertyName) => {
                     self.cacheSingleLookup(entity, propertyName, listId);
                 });
             }
         }
 
-        removeEntityFromLookupCaches(entity:ap.IListItem, propertyArray:string[]) {
+        removeEntityFromLookupCaches(entity:ap.IListItem, propertyArray:string[]):void {
             var self = this;
             if (entity.id) {
                 var listId = entity.getListId();
@@ -58,45 +63,48 @@ module ap.LookupCache {
          * instead.
          * @returns {object} Keys of entity id and value of entity.
          */
-        retrieveLookupCacheById(propertyName:string, listId:string, cacheId:number, asObject:[boolean]) {
+        retrieveLookupCacheById<T>(propertyName:string, listId:string, cacheId:number, asObject?:boolean) {
             var self = this;
-            var cache = self.getLookupCache(propertyName, listId);
+            var cache = self.getPropertyCache(propertyName, listId);
             if (asObject) {
-                return cache[cacheId] ? cache[cacheId] : {};
+                cache[cacheId] = cache[cacheId] || self.apIndexedCacheFactory.create();
+                return cache[cacheId];
             } else {
                 return cache[cacheId] ? _.toArray(cache[cacheId]) : [];
             }
         }
 
 
-        cacheSingleLookup(entity:ap.IListItem, propertyName:string, listId:string) {
+        cacheSingleLookup(entity:ap.IListItem, propertyName:string, listId:string) : void {
             var self = this;
             /** Handle single and multiple lookups by only dealing with an Lookup[] */
             var lookups = _.isArray(entity[propertyName]) ? entity[propertyName] : [entity[propertyName]];
             _.each(lookups, function (lookup:ap.ILookup) {
                 if (lookup && lookup.lookupId) {
-                    var lookupCache = self.getLookupCache(propertyName, listId);
-                    lookupCache[lookup.lookupId] = lookupCache[lookup.lookupId] || self.apIndexedCacheFactory.create();
-                    lookupCache[lookup.lookupId].addEntity(entity);
+                    var propertyCache = self.getPropertyCache(propertyName, listId);
+                    propertyCache[lookup.lookupId] = propertyCache[lookup.lookupId] || self.apIndexedCacheFactory.create();
+                    var lookupCache:ap.IIndexedCache<ap.IListItem> = propertyCache[lookup.lookupId];
+                    lookupCache.addEntity(entity);
                 }
             });
         }
 
-        removeEntityFromSingleLookupCache(entity:ap.IListItem, propertyName:string, listId:string) {
+        removeEntityFromSingleLookupCache(entity:ap.IListItem, propertyName:string, listId:string) : void {
             var self = this;
             /** Handle single and multiple lookups by only dealing with an Lookup[] */
             var lookups = _.isArray(entity[propertyName]) ? entity[propertyName] : [entity[propertyName]];
             _.each(lookups, function (lookup:ap.ILookup) {
                 if (lookup && lookup.lookupId) {
-                    var lookupCache = self.getLookupCache(propertyName, listId);
-                    if (lookupCache[lookup.lookupId]) {
-                        lookupCache[lookup.lookupId].removeEntity(entity);
+                    var propertyCache = self.getPropertyCache(propertyName, listId);
+                    if (propertyCache[lookup.lookupId]) {
+                        var lookupCache:ap.IIndexedCache<ap.IListItem> = propertyCache[lookup.lookupId];
+                        lookupCache.removeEntity(entity);
                     }
                 }
             });
         }
 
-        getLookupCache(propertyName:string, listId:string) {
+        getPropertyCache<T>(propertyName:string, listId:string):{ [key:number] : ap.IIndexedCache<T> } {
             this.lookupCache[listId] = this.lookupCache[listId] || {};
             this.lookupCache[listId][propertyName] = this.lookupCache[listId][propertyName] || {};
             return this.lookupCache[listId][propertyName];

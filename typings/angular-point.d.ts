@@ -1,7 +1,7 @@
 
 declare module ap {
 
-  interface IIndexedCache {
+  export interface IIndexedCache {
     addEntity(entity:IListItem): void;
     clear(): void;
     count(): number;
@@ -15,11 +15,11 @@ declare module ap {
     [key: number]: IListItem;
   }
 
-  interface IListItemCrudOptions {
+  export interface IListItemCrudOptions {
     //TODO Implement
   }
 
-  interface IFieldDefinition {
+  export interface IFieldDefinition {
     choices?:string[];
     Choices?:string[];
     description?:string;
@@ -39,33 +39,33 @@ declare module ap {
     List?
   }
 
-  interface IListItemVersion {
-    //TODO Implement
+  export interface IListItemVersion extends IListItem {
+    version:Date;
   }
 
-  interface IWorkflowDefinition {
+  export interface IWorkflowDefinition {
     name:string;
     instantiationUrl:string;
     templateId:string;
   }
 
-  interface IStartWorkflowParams {
+  export interface IStartWorkflowParams {
     templateId?:string;
     workflowName?:string;
     fileRef?:string;
   }
 
-  interface ILookup {
+  export interface ILookup {
     lookupValue:string;
     lookupId:number;
   }
 
-  interface IUser {
+  export interface IUser {
     lookupValue:string;
     lookupId:number;
   }
 
-  interface IListItem {
+  export interface IListItem {
     id?:number;
     created?:Date;
     modified?:Date;
@@ -99,7 +99,7 @@ declare module ap {
 
   }
 
-  interface IList {
+  export interface IList {
     customFields:IFieldDefinition[];
     effectivePermMask?:string;
     fields:IFieldDefinition[];
@@ -112,14 +112,15 @@ declare module ap {
     webURL:string;
   }
 
-  interface IModel {
-    factory(obj:Object): void;
+  export interface IModel {
+    factory<T>(obj:Object):T;
     list:IList;
 
-    addNewItem(entity:IListItem, options?:Object): ng.IPromise<IListItem>;
+
+    addNewItem(entity:Object, options?:Object): ng.IPromise<IListItem>;
     createEmptyItem(overrides?:Object): IListItem;
     executeQuery(queryName?:string, options?:Object): ng.IPromise<IIndexedCache>;
-    extendListMetadata(options:Object): ng.IPromise<any>;
+    extendListMetadata(options?:Object): ng.IPromise<any>;
     generateMockData(options?:Object): IListItem[];
     getAllListItems(): ng.IPromise<IIndexedCache>;
     getCache(queryName:string): ICache;
@@ -132,12 +133,13 @@ declare module ap {
     getModel():IModel;
     getQuery(queryName:string): IQuery;
     isInitialised(): boolean;
+    queries:{getAllListItems:IQuery; [key:string]:IQuery};
     registerQuery(queryOptions: IQueryOptions): IQuery;
     resolvePermissions(): IUserPermissionsObject;
     validateEntity(entity:IListItem, options?:Object): boolean;
   }
 
-  interface IDiscussionThread {
+  export interface IDiscussionThread {
     posts:IDiscussionThreadPost[];
     nextId:number;
     getNextId():number;
@@ -147,7 +149,7 @@ declare module ap {
     saveChanges():ng.IPromise<IListItem>;
   }
 
-  interface IDiscussionThreadPost {
+  export interface IDiscussionThreadPost {
     content:string;
     id:number;
     parentId:number;
@@ -159,11 +161,11 @@ declare module ap {
     reply():ng.IPromise<IListItem>;
   }
 
-  interface ICache {
+  export interface ICache {
     //TODO Populate me!
   }
 
-  interface IQuery {
+  export interface IQuery {
     execute?(options?:Object):ng.IPromise<IIndexedCache>;
     operation?:string;
     cacheXML?:boolean;
@@ -172,12 +174,12 @@ declare module ap {
     queryOptions?:string;
   }
 
-  interface IQueryOptions {
+  export interface IQueryOptions {
     name?:string;
     operation?:string;
   }
 
-  interface IUserPermissionsObject {
+  export interface IUserPermissionsObject {
     ViewListItems:boolean;
     AddListItems:boolean;
     EditListItems:boolean;
@@ -211,6 +213,16 @@ declare module ap {
     EditMyUserInfo:boolean;
     EnumeratePermissions:boolean;
     FullMask:boolean;
+  }
+
+  export interface IAPConfig{
+    appTitle:string;
+    debug:boolean;
+    defaultQueryName:string;
+    defaultUrl:string;
+    environment?:string;
+    firebaseURL?:string;
+    offline:boolean;
   }
 
 }

@@ -1,6 +1,5 @@
 //Remove Initial slash to get typings
 /// <reference path="../typings/tsd.d.ts" />
-/// <reference path="../angular-point.d.ts" />
 var ap;
 (function (ap) {
     var LookupCache;
@@ -57,9 +56,10 @@ var ap;
              */
             LookupCacheService.prototype.retrieveLookupCacheById = function (propertyName, listId, cacheId, asObject) {
                 var self = this;
-                var cache = self.getLookupCache(propertyName, listId);
+                var cache = self.getPropertyCache(propertyName, listId);
                 if (asObject) {
-                    return cache[cacheId] ? cache[cacheId] : {};
+                    cache[cacheId] = cache[cacheId] || self.apIndexedCacheFactory.create();
+                    return cache[cacheId];
                 }
                 else {
                     return cache[cacheId] ? _.toArray(cache[cacheId]) : [];
@@ -71,9 +71,10 @@ var ap;
                 var lookups = _.isArray(entity[propertyName]) ? entity[propertyName] : [entity[propertyName]];
                 _.each(lookups, function (lookup) {
                     if (lookup && lookup.lookupId) {
-                        var lookupCache = self.getLookupCache(propertyName, listId);
-                        lookupCache[lookup.lookupId] = lookupCache[lookup.lookupId] || self.apIndexedCacheFactory.create();
-                        lookupCache[lookup.lookupId].addEntity(entity);
+                        var propertyCache = self.getPropertyCache(propertyName, listId);
+                        propertyCache[lookup.lookupId] = propertyCache[lookup.lookupId] || self.apIndexedCacheFactory.create();
+                        var lookupCache = propertyCache[lookup.lookupId];
+                        lookupCache.addEntity(entity);
                     }
                 });
             };
@@ -83,14 +84,15 @@ var ap;
                 var lookups = _.isArray(entity[propertyName]) ? entity[propertyName] : [entity[propertyName]];
                 _.each(lookups, function (lookup) {
                     if (lookup && lookup.lookupId) {
-                        var lookupCache = self.getLookupCache(propertyName, listId);
-                        if (lookupCache[lookup.lookupId]) {
-                            lookupCache[lookup.lookupId].removeEntity(entity);
+                        var propertyCache = self.getPropertyCache(propertyName, listId);
+                        if (propertyCache[lookup.lookupId]) {
+                            var lookupCache = propertyCache[lookup.lookupId];
+                            lookupCache.removeEntity(entity);
                         }
                     }
                 });
             };
-            LookupCacheService.prototype.getLookupCache = function (propertyName, listId) {
+            LookupCacheService.prototype.getPropertyCache = function (propertyName, listId) {
                 this.lookupCache[listId] = this.lookupCache[listId] || {};
                 this.lookupCache[listId][propertyName] = this.lookupCache[listId][propertyName] || {};
                 return this.lookupCache[listId][propertyName];
