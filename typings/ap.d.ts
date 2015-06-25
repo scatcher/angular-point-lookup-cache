@@ -1,4 +1,1 @@
-/// <reference path="tsd.d.ts" />
-declare module ap {
-
-}
+/// <reference path="../src/angular-point-lookup-cache.ts" />
