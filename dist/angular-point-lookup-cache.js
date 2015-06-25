@@ -10,6 +10,7 @@ var ap;
      */
     var LookupCacheService = (function () {
         function LookupCacheService(_apIndexedCacheFactory_) {
+            this.backup = {};
             this.lookupCache = {};
             apIndexedCacheFactory = _apIndexedCacheFactory_;
             service = this;
@@ -28,6 +29,7 @@ var ap;
                 /** Only cache entities saved to server */
                 _.each(propertyArray, function (propertyName) {
                     service.cacheSingleLookup(listItem, propertyName, listId);
+                    service.backupLookupValue(listItem, propertyName, listId);
                 });
             }
         };
@@ -61,6 +63,21 @@ var ap;
                 return cache[cacheId] ? _.toArray(cache[cacheId]) : [];
             }
         };
+        /**
+        * @ngdoc function
+        * @name apLookupCacheService:backupLookupValue
+        * @methodOf apLookupCacheService
+        * @param {ListItem} listItem List item to index.
+        * @param {string} propertyName Cache name - name of property on cached entity.
+        * @param {string} listId GUID of the list definition on the model.
+        * @description Stores a copy of the initial lookup value so in the event that the lookup value is changed we can
+        * remove cached references prior to saving.
+        */
+        LookupCacheService.prototype.backupLookupValue = function (listItem, propertyName, listId) {
+            this.backup[listId] = this.backup[listId] || {};
+            this.backup[listId][listItem.id] = this.backup[listId][listItem.id] || {};
+            this.backup[listId][listItem.id][propertyName] = _.clone(listItem[propertyName]);
+        };
         LookupCacheService.prototype.cacheSingleLookup = function (listItem, propertyName, listId) {
             /** Handle single and multiple lookups by only dealing with an Lookup[] */
             var lookups = _.isArray(listItem[propertyName]) ? listItem[propertyName] : [listItem[propertyName]];
@@ -75,7 +92,8 @@ var ap;
         };
         LookupCacheService.prototype.removeEntityFromSingleLookupCache = function (listItem, propertyName, listId) {
             /** Handle single and multiple lookups by only dealing with an Lookup[] */
-            var lookups = _.isArray(listItem[propertyName]) ? listItem[propertyName] : [listItem[propertyName]];
+            var backedUpLookupValues = this.backup[listId][listItem.id];
+            var lookups = _.isArray(backedUpLookupValues[propertyName]) ? backedUpLookupValues[propertyName] : [backedUpLookupValues[propertyName]];
             _.each(lookups, function (lookup) {
                 if (lookup && lookup.lookupId) {
                     var propertyCache = service.getPropertyCache(propertyName, listId);

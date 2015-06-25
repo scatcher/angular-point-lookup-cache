@@ -6,12 +6,13 @@ module ap {
     var service: LookupCacheService, apIndexedCacheFactory;
 
     interface ILookupCacheService {
-        cacheEntityByLookupId(listItem: ap.IListItem<any>, propertyArray: string[]): void;
-        cacheSingleLookup(listItem: ap.IListItem<any>, propertyName: string, listId: string): void;
-        getPropertyCache<T>(propertyName: string, listId: string): { [key: number]: ap.IIndexedCache<T> };
-        removeEntityFromLookupCaches(listItem: ap.IListItem<any>, propertyArray: string[]): void;
-        removeEntityFromSingleLookupCache(listItem: ap.IListItem<any>, propertyName: string, listId: string): void;
-        retrieveLookupCacheById<T>(propertyName: string, listId: string, cacheId: number): ap.IIndexedCache<T>;
+        backupLookupValue(listItem: ap.ListItem<any>, propertyName: string, listId: string): void;
+        cacheEntityByLookupId(listItem: ap.ListItem<any>, propertyArray: string[]): void;
+        cacheSingleLookup(listItem: ap.ListItem<any>, propertyName: string, listId: string): void;
+        getPropertyCache<T>(propertyName: string, listId: string): { [key: number]: ap.IndexedCache<T> };
+        removeEntityFromLookupCaches(listItem: ap.ListItem<any>, propertyArray: string[]): void;
+        removeEntityFromSingleLookupCache(listItem: ap.ListItem<any>, propertyName: string, listId: string): void;
+        retrieveLookupCacheById<T>(propertyName: string, listId: string, cacheId: number): ap.IndexedCache<T>;
         retrieveLookupCacheById<T>(propertyName: string, listId: string, cacheId: number, asObject?: boolean): T[];
     }
 
@@ -21,13 +22,14 @@ module ap {
      * @description
      */
     export class LookupCacheService implements ILookupCacheService {
+        backup: { [key: string]: { [key: number]: {} } } = {};
         lookupCache = {};
         static $inject = ['apIndexedCacheFactory'];
         constructor(_apIndexedCacheFactory_) {
             apIndexedCacheFactory = _apIndexedCacheFactory_;
             service = this;
         }
-
+        
         /**
          * @ngdoc function
          * @name apLookupCacheService:cacheEntityByLookupId
@@ -35,18 +37,19 @@ module ap {
          * @param {ListItem} listItem List item to index.
          * @param {string[]} propertyArray Array of the lookup properties to index by lookupId.
          */
-        cacheEntityByLookupId(listItem: ap.IListItem<any>, propertyArray: string[]): void {
+        cacheEntityByLookupId(listItem: ap.ListItem<any>, propertyArray: string[]): void {
             if (listItem.id) {
                 /** GUID of the list definition on the model */
                 var listId = listItem.getListId();
                 /** Only cache entities saved to server */
                 _.each(propertyArray, (propertyName) => {
                     service.cacheSingleLookup(listItem, propertyName, listId);
+                    service.backupLookupValue(listItem, propertyName, listId);
                 });
             }
         }
 
-        removeEntityFromLookupCaches(listItem: ap.IListItem<any>, propertyArray: string[]): void {
+        removeEntityFromLookupCaches(listItem: ap.ListItem<any>, propertyArray: string[]): void {
             if (listItem.id) {
                 var listId = listItem.getListId();
                 /** Only cache entities saved to server */
@@ -76,9 +79,25 @@ module ap {
                 return cache[cacheId] ? _.toArray(cache[cacheId]) : [];
             }
         }
+        
+        /**
+        * @ngdoc function
+        * @name apLookupCacheService:backupLookupValue
+        * @methodOf apLookupCacheService
+        * @param {ListItem} listItem List item to index.
+        * @param {string} propertyName Cache name - name of property on cached entity.
+        * @param {string} listId GUID of the list definition on the model.
+        * @description Stores a copy of the initial lookup value so in the event that the lookup value is changed we can 
+        * remove cached references prior to saving.
+        */
+        backupLookupValue(listItem: ap.ListItem<any>, propertyName: string, listId: string): void {
+            this.backup[listId] = this.backup[listId] || {};
+            this.backup[listId][listItem.id] = this.backup[listId][listItem.id] || {};
+            this.backup[listId][listItem.id][propertyName] = _.clone(listItem[propertyName]);
+        }        
 
 
-        cacheSingleLookup(listItem: ap.IListItem<any>, propertyName: string, listId: string): void {
+        cacheSingleLookup(listItem: ap.ListItem<any>, propertyName: string, listId: string): void {
             /** Handle single and multiple lookups by only dealing with an Lookup[] */
             var lookups = _.isArray(listItem[propertyName]) ? listItem[propertyName] : [listItem[propertyName]];
             _.each(lookups, function(lookup: ap.ILookup) {
@@ -91,9 +110,10 @@ module ap {
             });
         }
 
-        removeEntityFromSingleLookupCache(listItem: ap.IListItem<any>, propertyName: string, listId: string): void {
+        removeEntityFromSingleLookupCache(listItem: ap.ListItem<any>, propertyName: string, listId: string): void {
             /** Handle single and multiple lookups by only dealing with an Lookup[] */
-            var lookups = _.isArray(listItem[propertyName]) ? listItem[propertyName] : [listItem[propertyName]];
+            var backedUpLookupValues = this.backup[listId][listItem.id]
+            var lookups = _.isArray(backedUpLookupValues[propertyName]) ? backedUpLookupValues[propertyName] : [backedUpLookupValues[propertyName]];
             _.each(lookups, function(lookup: ap.ILookup) {
                 if (lookup && lookup.lookupId) {
                     var propertyCache = service.getPropertyCache(propertyName, listId);
@@ -105,7 +125,7 @@ module ap {
             });
         }
 
-        getPropertyCache<T>(propertyName: string, listId: string): { [key: number]: ap.IIndexedCache<T> } {
+        getPropertyCache<T>(propertyName: string, listId: string): { [key: number]: ap.IndexedCache<T> } {
             this.lookupCache[listId] = this.lookupCache[listId] || {};
             this.lookupCache[listId][propertyName] = this.lookupCache[listId][propertyName] || {};
             return this.lookupCache[listId][propertyName];
