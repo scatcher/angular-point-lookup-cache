@@ -137,7 +137,7 @@ module ap.lookupCache {
                 });
             }
         }
-        
+
         getPropertyCache<T>(propertyName: string, listId: string): { [key: number]: ap.IndexedCache<T> } {
             this.lookupCache[listId] = this.lookupCache[listId] || {};
             this.lookupCache[listId][propertyName] = this.lookupCache[listId][propertyName] || {};
@@ -148,7 +148,7 @@ module ap.lookupCache {
             if (listItem.id) {
                 var listId = listItem.getListId();
                 /** Only cache entities saved to server */
-                _.each(propertyArray, function (propertyName) {
+                _.each(propertyArray, function(propertyName) {
                     service.removeEntityFromSingleLookupCache(listItem, propertyName, listId);
                 });
             }
@@ -193,36 +193,43 @@ module ap.lookupCache {
 
 
         private cacheSingleLookup(listItem: ap.ListItem<any>, propertyName: string, listId: string): void {
-            /** Handle single and multiple lookups by only dealing with an Lookup[] */
-            var lookups = _.isArray(listItem[propertyName]) ? listItem[propertyName] : [listItem[propertyName]];
-            _.each(lookups, function (lookup: ap.ILookup) {
-                if (lookup && lookup.lookupId) {
-                    var propertyCache = service.getPropertyCache(propertyName, listId);
-                    propertyCache[lookup.lookupId] = propertyCache[lookup.lookupId] || apIndexedCacheFactory.create();
-                    var lookupCache = propertyCache[lookup.lookupId];
-                    lookupCache.addEntity(listItem);
-                } else {
-                    throw new Error("A valid lookup was not found.")
-                }
-            });
+            if (listItem[propertyName]) {
+                /** Handle single and multiple lookups by only dealing with an Lookup[] */
+                var lookups = _.isArray(listItem[propertyName]) ? listItem[propertyName] : [listItem[propertyName]];
+                _.each(lookups, function(lookup: ap.ILookup) {
+                    if (lookup && lookup.lookupId) {
+                        var propertyCache = service.getPropertyCache(propertyName, listId);
+                        propertyCache[lookup.lookupId] = propertyCache[lookup.lookupId] || apIndexedCacheFactory.create();
+                        var lookupCache = propertyCache[lookup.lookupId];
+                        lookupCache.addEntity(listItem);
+                    } else {
+                        throw new Error("A valid lookup was not found.");
+                    }
+                });
+            }
         }
 
         private removeEntityFromSingleLookupCache(listItem: ap.ListItem<any>, propertyName: string, listId: string): void {
             /** Handle single and multiple lookups by only dealing with an Lookup[] */
             var backedUpLookupValues = this.backup[listId][listItem.id];
-            var lookups = _.isArray(backedUpLookupValues[propertyName]) ? backedUpLookupValues[propertyName] : [backedUpLookupValues[propertyName]];
-            _.each(lookups, function (lookup: ap.ILookup) {
-                if (lookup && lookup.lookupId) {
-                    var propertyCache = service.getPropertyCache(propertyName, listId);
-                    if (propertyCache[lookup.lookupId]) {
-                        var lookupCache = propertyCache[lookup.lookupId];
-                        lookupCache.removeEntity(listItem);
+            
+            // Don't look at curent list item value in casee user changed it, look at the original backed up value that we stored so we can unregister
+            // what was originally registered.
+            if (backedUpLookupValues && backedUpLookupValues[propertyName]) {
+                var lookups = _.isArray(backedUpLookupValues[propertyName]) ? backedUpLookupValues[propertyName] : [backedUpLookupValues[propertyName]];
+                _.each(lookups, function(lookup: ap.ILookup) {
+                    if (lookup && lookup.lookupId) {
+                        var propertyCache = service.getPropertyCache(propertyName, listId);
+                        if (propertyCache[lookup.lookupId]) {
+                            var lookupCache = propertyCache[lookup.lookupId];
+                            lookupCache.removeEntity(listItem);
+                        }
+                    } else {
+                        throw new Error("A valid lookup was not found.");
                     }
-                } else {
-                    throw new Error("A valid lookup was not found.")
-                }
-                
-            });
+
+                });
+            }
         }
 
     }

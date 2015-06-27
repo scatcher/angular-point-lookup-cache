@@ -1,6 +1,6 @@
 {
   "name": "angular-point-lookup-cache",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Service used to create caches for specified lookup fields to eliminate the need to iterate over the entire list to find related items.",
   "main": "dist/angular-point-lookup-cache.js",
   "scripts": {
