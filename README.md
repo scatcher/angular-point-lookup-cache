@@ -14,13 +14,19 @@ Register On Model
             if(self.id) {
                 /** Store in cached object so we can reference from lookup reference */
                 lookupCacheService.cacheEntityByLookupId(self, lookupFieldsToCache);
-                /** Modify prototype delete logic so we can remove from cache prior to actually deleting */
-                self._deleteItem = self.deleteItem;
-                self.deleteItem = function() {
-                    lookupCacheService.removeEntityFromLookupCaches(self, lookupFieldsToCache);
-                    return self._deleteItem();
-                }
             }
+        }
+        
+        //Monkey Patch save and delete to allow us to cleanup cache
+        ProjectTask.prototype._deleteItem = SpecificationRequirement.prototype.deleteItem;
+        ProjectTask.prototype.deleteItem = function() {
+                if (this.id) { apLookupCacheService.removeEntityFromLookupCaches(this, lookupFieldsToCache); }
+                return this._deleteItem(arguments);
+        }
+        ProjectTask.prototype._saveChanges = SpecificationRequirement.prototype.saveChanges;
+        ProjectTask.prototype.saveChanges = function() {
+                if (this.id) { apLookupCacheService.removeEntityFromLookupCaches(this, lookupFieldsToCache); }
+                return this._saveChanges(arguments);
         }
         
         var model = apModelFactory.create({
@@ -62,21 +68,21 @@ Register On Model
 Using Cached Value From Project Object
 ---------
 
-        /** On the project model **/
-        function Project(obj) {
-            var self = this;
-            _.extend(self, obj);
-        }
-        
-        Project.prototype.getProjectTasks = function() {
-            return projectTasksModel.getProjectTasks(this.id);
-        }
-        
-        /** Project tasks are now directly available from a given project */
-        
-        //Returns an array containing all project tasks
-        var projectTasks = myProject.getProjectTasks();
-        
-        //Returns an indexed cache object that hasn't been converted into an array, keys=id and val=list item
-        var projectTasks = myProject.getProjectTasks(true);
+    /** On the project model **/
+    function Project(obj) {
+        var self = this;
+        _.assign(self, obj);
+    }
+    
+    Project.prototype.getProjectTasks = function() {
+        return projectTasksModel.getProjectTasks(this.id);
+    }
+    
+    /** Project tasks are now directly available from a given project */
+    
+    //Returns an array containing all project tasks
+    var projectTasks = myProject.getProjectTasks();
+    
+    //Returns an indexed cache object that hasn't been converted into an array, keys=id and val=list item
+    var projectTasks = myProject.getProjectTasks(true);
 

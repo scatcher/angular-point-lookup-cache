@@ -1,1 +1,1 @@
-/// <reference path="../src/angular-point-lookup-cache.ts" />
+/// <reference path="../src/index" />
