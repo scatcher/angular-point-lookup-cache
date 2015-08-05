@@ -26,53 +26,64 @@ module ap.lookupCache {
      * @example
      * <pre>
      * //Register On Model
-     * var lookupFieldsToCache = ['project'];
-     *
-     * function ProjectTask(obj) {
-     *     var self = this;
-     *     _.extend(self, obj);
-     *
-     *     if (self.id) {
-     *         // Store in cached object so we can reference from lookup reference
-     *         lookupCacheService.cacheEntityByLookupId(self, lookupFieldsToCache);
-     *     }
+     * let apLookupCacheService: ap.lookupCache.LookupCacheService;
+     * let lookupFieldsToCache = ['project'];
+     * 
+     * class ProjectTask{
+     *      constructor(obj) {
+     *          super();
+     *          _.assign(this, obj);
+     *          
+     *          //Only cache list items saved to server so verify an id is available
+     *          if(this.id) {
+     *  
+     *              // Store in cached object so we can reference from lookup reference
+     *              apLookupCacheService.cacheEntityByLookupId(this, lookupFieldsToCache);
+     *          }
+     *      }
+     * 
+     *      //...other methods on constructor class
      * }
-     *
-     * //Monkey Patch save and delete to allow us to cleanup cache
-     * ProjectTask.prototype._deleteItem = SpecificationRequirement.prototype.deleteItem;
-     * ProjectTask.prototype.deleteItem = function () {
-     *     if (this.id) {
-     *         apLookupCacheService.removeEntityFromLookupCaches(this, lookupFieldsToCache);
-     *     }
-     *     return this._deleteItem(arguments);
+     * 
+     * export class ProjectTasksModel extends ap.Model {
+     *      constructor($injector: ng.auto.IInjectorService) {
+     * 
+     *          super({
+     *              factory: ProjectTask,
+     *              getChildren: getChildren,
+     *              list: {
+     *                  // Maps to the offline XML file in dev folder (no spaces)
+     *                  title: 'ProjectTask',
+     *                  /// List GUID can be found in list properties in SharePoint designer
+     *                  environments: {
+     *                      production: '{C72C44A2-DC40-4308-BEFF-3FF418D14022}',
+     *                      test: '{DAD8689C-8B9E-4088-BEC5-9F273CAAE104}'
+     *                  },
+     *                  customFields: [
+     *                      // Array of objects mapping each SharePoint field to a property on a list item object
+     *                      {staticName: 'Title', objectType: 'Text', mappedName: 'title', cols: 3, readOnly: false},
+     *                      {staticName: 'Project', objectType: 'Lookup', mappedName: 'project', readOnly: false}
+     *                      ...
+     *                  ]
+     *              }
+     *          });
+     *          
+     *          //Expose service to ProjectTask class and we know it's already loaded because it's loaded before
+     *          //project files
+     *          apLookupCacheService = $injector.get('apLookupCacheService');
+     * 
+     *          //Patch save and delete on class prototype to allow us to cleanup cache before each event
+     *          apLookupCacheService.manageChangeEvents(Muster, lookupFieldsToCache);
+     *          
+     *      }
+     * 
+     *      //...other methods on model
+     * 
      * }
-     * ProjectTask.prototype._saveChanges = SpecificationRequirement.prototype.saveChanges;
-     * ProjectTask.prototype.saveChanges = function () {
-     *     if (this.id) {
-     *         apLookupCacheService.removeEntityFromLookupCaches(this, lookupFieldsToCache);
-     *     }
-     *     return this._saveChanges(arguments);
-     * }
-     *
-     * var model = apModelFactory.create({
-     *     factory: ProjectTask,
-     *     getChildren: getChildren,
-     *     list: {
-     *         // Maps to the offline XML file in dev folder (no spaces)
-     *         title: 'ProjectTask',
-     *         /// List GUID can be found in list properties in SharePoint designer
-     *         environments: {
-     *             production: '{C72C44A2-DC40-4308-BEFF-3FF418D14022}',
-     *             test: '{DAD8689C-8B9E-4088-BEC5-9F273CAAE104}'
-     *         },
-     *         customFields: [
-     *             // Array of objects mapping each SharePoint field to a property on a list item object
-     *             {staticName: 'Title', objectType: 'Text', mappedName: 'title', cols: 3, readOnly: false},
-     *             {staticName: 'Project', objectType: 'Lookup', mappedName: 'project', readOnly: false}
-     *             ...
-     *         ]
-     *     }
-     * });
+     * </pre>
+     */
+     
+     /** 
      *
      * @ngdoc function
      * @name ProjectTask:getProjectTasks
@@ -144,6 +155,43 @@ module ap.lookupCache {
             return this.lookupCache[listId][propertyName];
         }
         
+        /**
+         * @ngdoc function
+         * @name apLookupCacheService:manageChangeEvents
+         * @methodOf apLookupCacheService
+         * @param {ListItem} listItemConstructor List item class.
+         * @param {string[]} propertyArray Array of the lookup properties being cached.
+         * @description Attaches preSave and preDelete actions to the list item prototype for a given model.
+         * Cleans up local cache prior to list item save or delete.  When saved, the newly returned
+         * list item is then added back into the cache and when deleted we prune the list item from all cache objects.
+         * 
+         * @example
+         * <pre>
+         * //...inside the model constructor
+         * //New way with use of helper method
+         * apLookupCacheService.manageChangeEvents(MyListItemFactoryClass, MyLookupFieldNamesArrayToCache);
+         * 
+         * //vs. Old Way
+         * 
+         * //...somewhere below the ListItemFactoryClass definition
+         * //Monkey Patch save and delete to allow us to cleanup cache
+         * MyListItemFactoryClass.prototype._deleteItem = MyListItemFactoryClass.prototype.deleteItem;
+         * MyListItemFactoryClass.prototype.deleteItem = function () {
+         *     if (this.id) {
+         *         apLookupCacheService.removeEntityFromLookupCaches(this, MyLookupFieldNamesArrayToCache);
+         *     }
+         *     return this._deleteItem(arguments);
+         * }
+         * MyListItemFactoryClass.prototype._saveChanges = MyListItemFactoryClass.prototype.saveChanges;
+         * MyListItemFactoryClass.prototype.saveChanges = function () {
+         *     if (this.id) {
+         *         apLookupCacheService.removeEntityFromLookupCaches(this, MyLookupFieldNamesArrayToCache);
+         *     }
+         *     return this._saveChanges(arguments);
+         * }
+         * 
+         * </pre>
+         */
         manageChangeEvents(listItemConstructor: ap.ListItem<any>, propertyArray: string[]) {
             var unSubscribeOnChange = function() {
                 if (this.id) {
