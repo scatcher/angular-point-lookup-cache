@@ -130,6 +130,17 @@ var ap;
                 this.lookupCache[listId][propertyName] = this.lookupCache[listId][propertyName] || {};
                 return this.lookupCache[listId][propertyName];
             };
+            LookupCacheService.prototype.manageChangeEvents = function (listItemConstructor, propertyArray) {
+                var unSubscribeOnChange = function () {
+                    if (this.id) {
+                        service.removeEntityFromLookupCaches(this, propertyArray);
+                    }
+                    //Need to return true otherwise it means validation failed and save/delete event is prevented
+                    return true;
+                };
+                listItemConstructor.prototype.registerPreDeleteAction(unSubscribeOnChange);
+                listItemConstructor.prototype.registerPreSaveAction(unSubscribeOnChange);
+            };
             LookupCacheService.prototype.removeEntityFromLookupCaches = function (listItem, propertyArray) {
                 if (listItem.id) {
                     var listId = listItem.getListId();

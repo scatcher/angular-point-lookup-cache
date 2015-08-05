@@ -1,6 +1,6 @@
 {
   "name": "angular-point-lookup-cache",
-  "version": "3.0.4",
+  "version": "3.1.0",
   "homepage": "https://github.com/scatcher/angular-point-lookup-cache",
   "authors": [
     "Scott Hatcher <scott@scotthatcher.com>"
@@ -26,5 +26,8 @@
   ],
   "typescript": {
     "definition": "./typings/ap.d.ts"
+  },
+  "resolutions": {
+    "lodash": "^3.10.0"
   }
 }

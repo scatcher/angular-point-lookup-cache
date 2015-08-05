@@ -7,10 +7,10 @@ module ap.lookupCache {
 
     interface ILookupCacheService {
         cacheEntityByLookupId(listItem: ap.ListItem<any>, propertyArray: string[]): void;
-        getPropertyCache<T>(propertyName: string, listId: string): { [key: number]: ap.IndexedCache<T> };
+        getPropertyCache<T extends ap.ListItem<any>>(propertyName: string, listId: string): { [key: number]: ap.IndexedCache<T> };
         removeEntityFromLookupCaches(listItem: ap.ListItem<any>, propertyArray: string[]): void;
-        retrieveLookupCacheById<T>(propertyName: string, listId: string, cacheId: number): ap.IndexedCache<T>;
-        retrieveLookupCacheById<T>(propertyName: string, listId: string, cacheId: number, asObject?: boolean): T[];
+        retrieveLookupCacheById<T extends ap.ListItem<any>>(propertyName: string, listId: string, cacheId: number): ap.IndexedCache<T>;
+        retrieveLookupCacheById<T extends ap.ListItem<any>>(propertyName: string, listId: string, cacheId: number, asObject?: boolean): T[];
     }
 
 
@@ -138,10 +138,22 @@ module ap.lookupCache {
             }
         }
 
-        getPropertyCache<T>(propertyName: string, listId: string): { [key: number]: ap.IndexedCache<T> } {
+        getPropertyCache<T extends ap.ListItem<any>>(propertyName: string, listId: string): { [key: number]: ap.IndexedCache<T> } {
             this.lookupCache[listId] = this.lookupCache[listId] || {};
             this.lookupCache[listId][propertyName] = this.lookupCache[listId][propertyName] || {};
             return this.lookupCache[listId][propertyName];
+        }
+        
+        manageChangeEvents(listItemConstructor: ap.ListItem<any>, propertyArray: string[]) {
+            var unSubscribeOnChange = function() {
+                if (this.id) {
+                    service.removeEntityFromLookupCaches(this, propertyArray);
+                }
+                //Need to return true otherwise it means validation failed and save/delete event is prevented
+                return true;                
+            }
+            listItemConstructor.prototype.registerPreDeleteAction(unSubscribeOnChange);
+            listItemConstructor.prototype.registerPreSaveAction(unSubscribeOnChange);
         }
 
         removeEntityFromLookupCaches(listItem: ap.ListItem<any>, propertyArray: string[]): void {
@@ -165,7 +177,7 @@ module ap.lookupCache {
          * instead.
          * @returns {object} Keys of entity id and value of entity.
          */
-        retrieveLookupCacheById<T>(propertyName: string, listId: string, cacheId: number, asObject?: boolean) {
+        retrieveLookupCacheById<T extends ap.ListItem<any>>(propertyName: string, listId: string, cacheId: number, asObject?: boolean) {
             var cache = service.getPropertyCache(propertyName, listId);
             if (asObject) {
                 cache[cacheId] = cache[cacheId] || apIndexedCacheFactory.create();
