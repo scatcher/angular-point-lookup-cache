@@ -84,7 +84,7 @@ var ap;
         * Find all project tasks that reference a given project.
         * @returns {object} Keys of spec id's and value of the spec objects if "asObject=true" otherwise ProjectTask[]
         * function getProjectTasks(projectId, asObject) {
-        *     return lookupCacheService.retrieveLookupCacheById('project', model.list.getListId(), projectId, asObject);
+        *     return lookupCacheService.retrieveLookupCacheById<ProjectTask>('project', model.list.getListId(), projectId, asObject);
         * }
         * </pre>
         *
@@ -93,8 +93,7 @@ var ap;
         * <pre>
         * // On the project model
         * function Project(obj) {
-        *     var self = this;
-        *     _.assign(self, obj);
+        *     _.assign(this, obj);
         * }
         *
         * Project.prototype.getProjectTasks = function() {
@@ -191,7 +190,7 @@ var ap;
             LookupCacheService.prototype.removeEntityFromLookupCaches = function (listItem, propertyArray) {
                 if (listItem.id) {
                     var listId = listItem.getListId();
-                    /** Only cache entities saved to server */
+                    /** Only cache entities saved to server and we know because they'd have an id */
                     _.each(propertyArray, function (propertyName) {
                         service.removeEntityFromSingleLookupCache(listItem, propertyName, listId);
                     });
@@ -209,6 +208,7 @@ var ap;
              * @returns {object} Keys of entity id and value of entity.
              */
             LookupCacheService.prototype.retrieveLookupCacheById = function (propertyName, listId, cacheId, asObject) {
+                if (asObject === void 0) { asObject = false; }
                 var cache = service.getPropertyCache(propertyName, listId);
                 if (asObject) {
                     cache[cacheId] = cache[cacheId] || apIndexedCacheFactory.create();
@@ -242,7 +242,7 @@ var ap;
                             var propertyCache = service.getPropertyCache(propertyName, listId);
                             propertyCache[lookup.lookupId] = propertyCache[lookup.lookupId] || apIndexedCacheFactory.create();
                             var lookupCache = propertyCache[lookup.lookupId];
-                            lookupCache.addEntity(listItem);
+                            lookupCache.set(listItem.id, listItem);
                         }
                         else {
                             throw new Error("A valid lookup was not found.");
@@ -262,7 +262,7 @@ var ap;
                             var propertyCache = service.getPropertyCache(propertyName, listId);
                             if (propertyCache[lookup.lookupId]) {
                                 var lookupCache = propertyCache[lookup.lookupId];
-                                lookupCache.removeEntity(listItem);
+                                lookupCache.delete(listItem.id);
                             }
                         }
                         else {

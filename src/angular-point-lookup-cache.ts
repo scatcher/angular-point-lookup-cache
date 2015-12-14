@@ -18,36 +18,36 @@ module ap.lookupCache {
      * @ngdoc service
      * @name apLookupCacheService
      * @description
-     * Service to create a reverse lookup cache that stores a list item in key/val map based on lookup id so the remote 
+     * Service to create a reverse lookup cache that stores a list item in key/val map based on lookup id so the remote
      * moddle can call service to find all related list items already stored in the cache.  Only need to process on list
      * item instantiation and then prune references when a list item is saved/deleted.
-     * 
-     * 
+     *
+     *
      * @example
      * <pre>
      * //Register On Model
      * let apLookupCacheService: ap.lookupCache.LookupCacheService;
      * let lookupFieldsToCache = ['project'];
-     * 
+     *
      * class ProjectTask{
      *      constructor(obj) {
      *          super();
      *          _.assign(this, obj);
-     *          
+     *
      *          //Only cache list items saved to server so verify an id is available
      *          if(this.id) {
-     *  
+     *
      *              // Store in cached object so we can reference from lookup reference
      *              apLookupCacheService.cacheEntityByLookupId(this, lookupFieldsToCache);
      *          }
      *      }
-     * 
+     *
      *      //...other methods on constructor class
      * }
-     * 
+     *
      * export class ProjectTasksModel extends ap.Model {
      *      constructor($injector: ng.auto.IInjectorService) {
-     * 
+     *
      *          super({
      *              factory: ProjectTask,
      *              getChildren: getChildren,
@@ -67,23 +67,23 @@ module ap.lookupCache {
      *                  ]
      *              }
      *          });
-     *          
+     *
      *          //Expose service to ProjectTask class and we know it's already loaded because it's loaded before
      *          //project files
      *          apLookupCacheService = $injector.get('apLookupCacheService');
-     * 
+     *
      *          //Patch save and delete on class prototype to allow us to cleanup cache before each event
      *          apLookupCacheService.manageChangeEvents(Muster, lookupFieldsToCache);
-     *          
+     *
      *      }
-     * 
+     *
      *      //...other methods on model
-     * 
+     *
      * }
      * </pre>
      */
-     
-     /** 
+
+     /**
      *
      * @ngdoc function
      * @name ProjectTask:getProjectTasks
@@ -94,7 +94,7 @@ module ap.lookupCache {
      * Find all project tasks that reference a given project.
      * @returns {object} Keys of spec id's and value of the spec objects if "asObject=true" otherwise ProjectTask[]
      * function getProjectTasks(projectId, asObject) {
-     *     return lookupCacheService.retrieveLookupCacheById('project', model.list.getListId(), projectId, asObject);
+     *     return lookupCacheService.retrieveLookupCacheById<ProjectTask>('project', model.list.getListId(), projectId, asObject);
      * }
      * </pre>
      *
@@ -103,8 +103,7 @@ module ap.lookupCache {
      * <pre>
      * // On the project model
      * function Project(obj) {
-     *     var self = this;
-     *     _.assign(self, obj);
+     *     _.assign(this, obj);
      * }
      *
      * Project.prototype.getProjectTasks = function() {
@@ -154,7 +153,7 @@ module ap.lookupCache {
             this.lookupCache[listId][propertyName] = this.lookupCache[listId][propertyName] || {};
             return this.lookupCache[listId][propertyName];
         }
-        
+
         /**
          * @ngdoc function
          * @name apLookupCacheService:manageChangeEvents
@@ -164,15 +163,15 @@ module ap.lookupCache {
          * @description Attaches preSave and preDelete actions to the list item prototype for a given model.
          * Cleans up local cache prior to list item save or delete.  When saved, the newly returned
          * list item is then added back into the cache and when deleted we prune the list item from all cache objects.
-         * 
+         *
          * @example
          * <pre>
          * //...inside the model constructor
          * //New way with use of helper method
          * apLookupCacheService.manageChangeEvents(MyListItemFactoryClass, MyLookupFieldNamesArrayToCache);
-         * 
+         *
          * //vs. Old Way
-         * 
+         *
          * //...somewhere below the ListItemFactoryClass definition
          * //Monkey Patch save and delete to allow us to cleanup cache
          * MyListItemFactoryClass.prototype._deleteItem = MyListItemFactoryClass.prototype.deleteItem;
@@ -189,7 +188,7 @@ module ap.lookupCache {
          *     }
          *     return this._saveChanges(arguments);
          * }
-         * 
+         *
          * </pre>
          */
         manageChangeEvents(listItemConstructor: ap.ListItem<any>, propertyArray: string[]) {
@@ -198,7 +197,7 @@ module ap.lookupCache {
                     service.removeEntityFromLookupCaches(this, propertyArray);
                 }
                 //Need to return true otherwise it means validation failed and save/delete event is prevented
-                return true;                
+                return true;
             }
             listItemConstructor.prototype.registerPreDeleteAction(unSubscribeOnChange);
             listItemConstructor.prototype.registerPreSaveAction(unSubscribeOnChange);
@@ -207,7 +206,7 @@ module ap.lookupCache {
         removeEntityFromLookupCaches(listItem: ap.ListItem<any>, propertyArray: string[]): void {
             if (listItem.id) {
                 var listId = listItem.getListId();
-                /** Only cache entities saved to server */
+                /** Only cache entities saved to server and we know because they'd have an id */
                 _.each(propertyArray, function(propertyName) {
                     service.removeEntityFromSingleLookupCache(listItem, propertyName, listId);
                 });
@@ -225,10 +224,10 @@ module ap.lookupCache {
          * instead.
          * @returns {object} Keys of entity id and value of entity.
          */
-        retrieveLookupCacheById<T extends ap.ListItem<any>>(propertyName: string, listId: string, cacheId: number, asObject?: boolean) {
+        retrieveLookupCacheById<T extends ap.ListItem<any>>(propertyName: string, listId: string, cacheId: number, asObject: boolean = false) {
             var cache = service.getPropertyCache(propertyName, listId);
             if (asObject) {
-                cache[cacheId] = cache[cacheId] || apIndexedCacheFactory.create();
+                cache[cacheId] = cache[cacheId] || apIndexedCacheFactory.create<T>();
                 return cache[cacheId];
             } else {
                 return cache[cacheId] ? _.toArray(cache[cacheId]) : [];
@@ -256,12 +255,12 @@ module ap.lookupCache {
             if (listItem[propertyName]) {
                 /** Handle single and multiple lookups by only dealing with an Lookup[] */
                 var lookups = _.isArray(listItem[propertyName]) ? listItem[propertyName] : [listItem[propertyName]];
-                _.each(lookups, function(lookup: ap.ILookup) {
+                _.each(lookups, function(lookup: ap.ILookup<any>) {
                     if (lookup && lookup.lookupId) {
                         var propertyCache = service.getPropertyCache(propertyName, listId);
                         propertyCache[lookup.lookupId] = propertyCache[lookup.lookupId] || apIndexedCacheFactory.create();
                         var lookupCache = propertyCache[lookup.lookupId];
-                        lookupCache.addEntity(listItem);
+                        lookupCache.set(listItem.id, listItem);
                     } else {
                         throw new Error("A valid lookup was not found.");
                     }
@@ -272,17 +271,17 @@ module ap.lookupCache {
         private removeEntityFromSingleLookupCache(listItem: ap.ListItem<any>, propertyName: string, listId: string): void {
             /** Handle single and multiple lookups by only dealing with an Lookup[] */
             var backedUpLookupValues = this.backup[listId][listItem.id];
-            
+
             // Don't look at curent list item value in casee user changed it, look at the original backed up value that we stored so we can unregister
             // what was originally registered.
             if (backedUpLookupValues && backedUpLookupValues[propertyName]) {
                 var lookups = _.isArray(backedUpLookupValues[propertyName]) ? backedUpLookupValues[propertyName] : [backedUpLookupValues[propertyName]];
-                _.each(lookups, function(lookup: ap.ILookup) {
+                _.each(lookups, function(lookup: ap.ILookup<any>) {
                     if (lookup && lookup.lookupId) {
                         var propertyCache = service.getPropertyCache(propertyName, listId);
                         if (propertyCache[lookup.lookupId]) {
                             var lookupCache = propertyCache[lookup.lookupId];
-                            lookupCache.removeEntity(listItem);
+                            lookupCache.delete(listItem.id);
                         }
                     } else {
                         throw new Error("A valid lookup was not found.");

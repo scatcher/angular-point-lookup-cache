@@ -1,6 +1,6 @@
 {
   "name": "angular-point-lookup-cache",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "homepage": "https://github.com/scatcher/angular-point-lookup-cache",
   "authors": [
     "Scott Hatcher <scott@scotthatcher.com>"
@@ -8,9 +8,9 @@
   "description": "Service used to create caches for specified lookup fields to eliminate the need to iterate over the entire list to find related items.",
   "main": "dist/angular-point-lookup-cache.js",
   "dependencies": {
-    "angular": "^1.4.0-rc.0",
-    "angular-point": "^3.2.0",
-    "lodash": "~3.6.0"
+    "angular": "^1.4.8",
+    "angular-point": "^4.0.0",
+    "lodash": "^3.10.1"
   },
   "keywords": [
     "AngularJS",
@@ -26,8 +26,5 @@
   ],
   "typescript": {
     "definition": "./typings/ap.d.ts"
-  },
-  "resolutions": {
-    "lodash": "^3.10.0"
   }
 }
