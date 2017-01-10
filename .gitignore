@@ -1,11 +1,15 @@
-# Dependencies
 node_modules
-bower_components
 
-# Build
+reports
+typings
+out
 .tmp
+docs
+
+# Private
+/config/_private.conf.json
+.DS_Store
 
 # IDE
 .idea
-
-npm-debug.log
+.vscode

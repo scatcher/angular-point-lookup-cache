@@ -1,11 +1,6 @@
-/// <reference path="../typings/tsd.d.ts" />
-/// <reference path="angular-point-lookup-cache" />
+import {LookupCacheService} from './angular-point-lookup-cache';
+import {AngularPointModule} from 'angular-point';
 
-
-module ap.lookupCache {
-    'use strict';
-
-    angular.module('apLookupCache', ['angularPoint'])
+AngularPointModule
         .service('apLookupCacheService', LookupCacheService);
 
-}
