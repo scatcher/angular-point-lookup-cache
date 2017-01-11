@@ -4,3 +4,4 @@ import {AngularPointModule} from 'angular-point';
 AngularPointModule
         .service('apLookupCacheService', LookupCacheService);
 
+export { LookupCacheService };
